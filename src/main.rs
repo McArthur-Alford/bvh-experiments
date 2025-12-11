@@ -1,5 +1,6 @@
 use std::ops::Range;
 
+use itertools::Itertools;
 use nannou::{glam::Vec3Swizzles, prelude::*};
 use rand::Rng;
 
@@ -223,6 +224,7 @@ impl BVH {
 struct Model {
     _window: window::Id,
     bvh: BVH,
+    circles: Vec<Circle>,
 }
 
 fn main() {
@@ -233,21 +235,24 @@ fn model(app: &App) -> Model {
     let _window = app.new_window().view(view).build().unwrap();
 
     let mut rng = rand::rng();
-    let circles = (0..10)
+    let circles = (0..50)
         .map(|_| Circle {
             translation: Vec3::new(
                 rng.random_range(-500.0..500.0),
                 rng.random_range(-500.0..500.0),
                 rng.random_range(-500.0..500.0),
             ),
-            radius: rng.random_range(4.0..=30.0),
+            radius: rng.random_range(4.0..=5.0),
         })
-        .collect();
+        .collect_vec();
 
     let bvh = BVH::new(circles);
-    // dbg!(&bvh);
 
-    Model { _window, bvh }
+    Model {
+        _window,
+        circles: bvh.circles.clone(),
+        bvh,
+    }
 }
 
 fn update(_app: &App, _model: &mut Model, _update: Update) {}
@@ -258,6 +263,11 @@ fn view(app: &App, model: &Model, frame: Frame) {
 
     draw.background().color(BLACK);
     model.bvh.draw(&draw);
+
+    let draw = draw.line_mode();
+    draw.polyline()
+        .points(model.circles.iter().map(|c| c.translation).collect_vec())
+        .color(BLUE);
 
     draw.to_frame(app, &frame).unwrap();
 }
